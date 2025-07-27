@@ -1,10 +1,12 @@
+// lib/features/auth/screens/login_screen.dart
+
+import 'package:batucada_gestao_frontend/main_screeen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import '../../dashboard/screens/dashboard_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -35,31 +37,25 @@ class _LoginPageState extends State<LoginPage> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final token = data['access'];
-
+        
         await authService.saveToken(token);
 
-        // A navegação só acontece em um contexto válido, o que é garantido aqui.
         if (mounted) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const DashboardScreen()),
+            MaterialPageRoute(builder: (context) => const MainScreen()),
           );
         }
-      } else { // <-- BLOCO ELSE RESTAURADO
-        // Se a API retornou um erro (ex: senha incorreta)
+      } else {
         final errorData = jsonDecode(response.body);
-        print('Erro no login: ${response.statusCode}');
-        print('Detalhe: ${errorData['detail']}');
-        // AQUI, NO FUTURO, VAMOS MOSTRAR UM ALERTA DE ERRO PARA O USUÁRIO
+        print('Erro no login: ${errorData['detail']}');
       }
-    } catch (e) { // <-- BLOCO CATCH CORRIGIDO
-      // Se houve um erro de rede (ex: API desligada)
+    } catch (e) {
       print('Erro de conexão: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // A UI (build) continua a mesma
     return Scaffold(
       appBar: AppBar(
         title: const Text('Batucada Gestão - Login'),

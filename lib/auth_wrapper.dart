@@ -1,8 +1,8 @@
+import 'package:batucada_gestao_frontend/main_screeen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/services/auth_service.dart';
-import 'features/dashboard/screens/dashboard_screen.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
@@ -22,7 +22,7 @@ class AuthWrapper extends StatelessWidget {
 
         // Se o snapshot tem um token (não é nulo), mostra o Dashboard
         if (snapshot.hasData && snapshot.data != null) {
-          return const DashboardScreen();
+          return const MainScreen();
         }
 
         // Caso contrário, mostra a tela de Login
