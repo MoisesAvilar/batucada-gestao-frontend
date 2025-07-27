@@ -1,12 +1,20 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'features/auth/screens/login_screen.dart';
-import 'features/auth/services/auth_service.dart';
-import 'auth_wrapper.dart';
+import 'package:intl/date_symbol_data_local.dart'; // <-- 1. IMPORTE
 
-void main() {
+import 'auth_wrapper.dart';
+import 'features/auth/services/auth_service.dart';
+
+// 2. TRANSFORME A MAIN EM ASYNC E CHAME A FUNÇÃO
+void main() async {
+  // Garante que os widgets do Flutter sejam inicializados
+  WidgetsFlutterBinding.ensureInitialized();
+  // Inicializa os dados de formatação para o nosso idioma
+  await initializeDateFormatting('pt_BR', null);
+
   runApp(
-    // Envolve nosso app com o ChangeNotifierProvider
     ChangeNotifierProvider(
       create: (context) => AuthService(),
       child: const MyApp(),
