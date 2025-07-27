@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/scheduling/screens/aula_list_screen.dart';
+import 'features/students/screens/aluno_list_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -18,6 +19,7 @@ class _MainScreenState extends State<MainScreen> {
   static const List<Widget> _widgetOptions = <Widget>[
     DashboardScreen(),
     AulaListScreen(),
+    AlunoListScreen(),
     Text('Tela de Aulas (em breve)'), // Placeholder para a lista de aulas
     Text('Tela de Alunos (em breve)'), // Placeholder para a lista de alunos
   ];

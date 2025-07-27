@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../auth/services/auth_service.dart';
-// Importando os widgets que vamos reutilizar
 import '../../dashboard/screens/dashboard_screen.dart' show AulaEvent;
+import '../widgets/aula_filter_panel.dart'; // Importa nosso novo painel
 import '../../dashboard/widgets/aula_card.dart';
 
 class AulaListScreen extends StatefulWidget {
@@ -17,21 +17,30 @@ class AulaListScreen extends StatefulWidget {
 }
 
 class _AulaListScreenState extends State<AulaListScreen> {
-  late Future<List<AulaEvent>> _aulasFuture;
+  Future<List<AulaEvent>>? _aulasFuture;
+  // Guarda o estado atual dos filtros
+  Map<String, String> _currentFilters = {};
 
   @override
   void initState() {
     super.initState();
-    _aulasFuture = _fetchAulas();
+    // Atrasamos a primeira chamada para garantir que o 'context' esteja pronto
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _aulasFuture = _fetchAulas();
+    });
   }
 
+  // A função agora usa os filtros guardados no estado
   Future<List<AulaEvent>> _fetchAulas() async {
     final authService = Provider.of<AuthService>(context, listen: false);
     final token = await authService.getToken();
     if (token == null) throw Exception('Usuário não autenticado.');
 
     const String baseUrl = kIsWeb ? 'http://127.0.0.1:8000' : 'http://10.0.2.2:8000';
-    final url = Uri.parse('$baseUrl/api/v1/aulas/');
+    // Adiciona os filtros como query parameters na URL
+    final url = Uri.parse('$baseUrl/api/v1/aulas/').replace(
+      queryParameters: _currentFilters,
+    );
 
     final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
 
@@ -42,16 +51,29 @@ class _AulaListScreenState extends State<AulaListScreen> {
         final dataHora = DateTime.parse(aula['data_hora']);
         final alunos = (aula['alunos'] as List).map((a) => a['nome_completo']).join(', ');
         final title = '${dataHora.hour.toString().padLeft(2, '0')}:${dataHora.minute.toString().padLeft(2, '0')} - $alunos';
-
-        aulas.add(AulaEvent(
-          id: aula['id'],
-          title: title,
-          status: aula['status'],
-        ));
+        aulas.add(AulaEvent(id: aula['id'], title: title, status: aula['status']));
       }
       return aulas;
     } else {
       throw Exception('Falha ao carregar aulas.');
+    }
+  }
+
+  void _openFilterPanel() async {
+    // Mostra o painel de filtros e espera o resultado
+    final selectedFilters = await showModalBottomSheet<Map<String, String>>(
+      context: context,
+      isScrollControlled: true, // Permite que o painel cresça
+      builder: (context) => const AulaFilterPanel(),
+    );
+
+    // Se o usuário aplicou ou limpou os filtros
+    if (selectedFilters != null) {
+      setState(() {
+        _currentFilters = selectedFilters;
+        // Dispara uma nova busca na API com os novos filtros
+        _aulasFuture = _fetchAulas();
+      });
     }
   }
 
@@ -65,13 +87,11 @@ class _AulaListScreenState extends State<AulaListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: () {
-              // AQUI VAMOS ABRIR O PAINEL DE FILTROS NO FUTURO
-              print('Abrir filtros');
-            },
+            onPressed: _openFilterPanel, // Chama nossa função
           ),
         ],
       ),
+      // FutureBuilder é perfeito, pois podemos recriá-lo facilmente
       body: FutureBuilder<List<AulaEvent>>(
         future: _aulasFuture,
         builder: (context, snapshot) {
@@ -87,6 +107,7 @@ class _AulaListScreenState extends State<AulaListScreen> {
 
           final aulas = snapshot.data!;
           return ListView.builder(
+            padding: const EdgeInsets.all(8.0),
             itemCount: aulas.length,
             itemBuilder: (context, index) {
               return AulaCard(event: aulas[index]);
