@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'aluno_detail_screen.dart'; // Importa a tela de detalhes
 
 import '../../auth/services/auth_service.dart';
 
@@ -35,7 +36,7 @@ class _AlunoListScreenState extends State<AlunoListScreen> {
   List<Aluno> _alunos = [];
   bool _isLoading = true;
   String? _error;
-
+  
   final _searchController = TextEditingController();
   Timer? _debounce;
 
@@ -43,7 +44,6 @@ class _AlunoListScreenState extends State<AlunoListScreen> {
   void initState() {
     super.initState();
     _fetchAlunos();
-    // Adiciona um "ouvinte" para o campo de busca
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -55,7 +55,6 @@ class _AlunoListScreenState extends State<AlunoListScreen> {
     super.dispose();
   }
 
-  // Lógica de Debounce: espera o usuário parar de digitar por 500ms
   void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
@@ -64,10 +63,8 @@ class _AlunoListScreenState extends State<AlunoListScreen> {
   }
 
   Future<void> _fetchAlunos({String query = ''}) async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    // A lógica de busca de dados continua a mesma, está perfeita.
+    setState(() { _isLoading = true; _error = null; });
 
     final authService = Provider.of<AuthService>(context, listen: false);
     final token = await authService.getToken();
@@ -77,14 +74,12 @@ class _AlunoListScreenState extends State<AlunoListScreen> {
     }
 
     const String baseUrl = kIsWeb ? 'http://127.0.0.1:8000' : 'http://10.0.2.2:8000';
-    // Adiciona o parâmetro de busca na URL se houver uma query
     final url = Uri.parse('$baseUrl/api/v1/alunos/').replace(
       queryParameters: query.isNotEmpty ? {'search': query} : null
     );
-
+    
     try {
       final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
-
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         final List<dynamic> results = data['results'];
@@ -121,8 +116,15 @@ class _AlunoListScreenState extends State<AlunoListScreen> {
           ),
           title: Text(aluno.nomeCompleto),
           subtitle: Text(aluno.email ?? 'Sem e-mail'),
+          // --- AQUI ESTÁ A CORREÇÃO ---
           onTap: () {
-            print('Clicou no aluno ID: ${aluno.id}');
+            // Em vez de só imprimir, agora navegamos para a tela de detalhes
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                // Passamos o ID do aluno clicado para a próxima tela
+                builder: (context) => AlunoDetailScreen(alunoId: aluno.id),
+              ),
+            );
           },
         );
       },
@@ -133,15 +135,14 @@ class _AlunoListScreenState extends State<AlunoListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // Barra de busca no título
         title: TextField(
           controller: _searchController,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             hintText: 'Buscar aluno...',
             hintStyle: TextStyle(color: Colors.white54),
             border: InputBorder.none,
           ),
-          style: TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
