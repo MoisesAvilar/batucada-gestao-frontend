@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/scheduling/screens/aula_list_screen.dart';
 import 'features/students/screens/aluno_list_screen.dart';
+import 'features/scheduling/screens/aula_form_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -35,6 +36,16 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => const AulaFormScreen()),
+          );
+        },
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
+        child: const Icon(Icons.add),
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
