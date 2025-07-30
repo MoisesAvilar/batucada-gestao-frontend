@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'aluno_detail_screen.dart'; // Importa a tela de detalhes
 
 import '../../auth/services/auth_service.dart';
+import '../../../core/api/api_config.dart';
 
 // Modelo de dados para o Aluno
 class Aluno {
@@ -73,8 +73,7 @@ class _AlunoListScreenState extends State<AlunoListScreen> {
       return;
     }
 
-    const String baseUrl = kIsWeb ? 'http://127.0.0.1:8000' : 'http://10.0.2.2:8000';
-    final url = Uri.parse('$baseUrl/api/v1/alunos/').replace(
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/v1/alunos/').replace(
       queryParameters: query.isNotEmpty ? {'search': query} : null
     );
     

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:intl/intl.dart';
 import 'package:multi_dropdown/multiselect_dropdown.dart';
 import 'package:provider/provider.dart';
 import '../../auth/services/auth_service.dart';
+import '../../../core/api/api_config.dart';
 
 // Modelos de dados simples para os nossos dropdowns
 class Modalidade {
@@ -32,15 +32,13 @@ class _AulaFormWidgetState extends State<AulaFormWidget> {
   final _formKey = GlobalKey<FormState>();
 
   // Estado para os dados do formulário
+  bool _isSaving = false; // Controla o estado de "salvando"
+
   bool _isLoading = true;
   String? _error;
-
-  // Listas para as opções dos seletores
   List<Modalidade> _modalidades = [];
   List<Selecionavel> _alunos = [];
   List<Selecionavel> _professores = [];
-
-  // Valores selecionados
   int? _selectedModalidadeId;
   final MultiSelectController<int> _alunosController = MultiSelectController();
   final MultiSelectController<int> _professoresController = MultiSelectController();
@@ -52,7 +50,6 @@ class _AulaFormWidgetState extends State<AulaFormWidget> {
     super.initState();
     _fetchFormData();
     if (widget.initialDate != null) {
-      // Pré-preenche a data se veio do calendário
       final formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(widget.initialDate!);
       _dataHoraController.text = formattedDate;
     }
@@ -83,8 +80,7 @@ class _AulaFormWidgetState extends State<AulaFormWidget> {
   }
 
   Future<List<T>> _fetchGenericList<T>(String path, String token, T Function(Map<String, dynamic>) fromJson) async {
-    const String baseUrl = kIsWeb ? 'http://127.0.0.1:8000' : 'http://10.0.2.2:8000';
-    final url = Uri.parse('$baseUrl/api/v1/$path/?page_size=100'); // Busca até 100 itens
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/v1/$path/?page_size=100');
     final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
 
     if (response.statusCode == 200) {
@@ -120,12 +116,14 @@ class _AulaFormWidgetState extends State<AulaFormWidget> {
   }
 
   Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return; // Valida o formulário
+    if (!_formKey.currentState!.validate()) return;
+
+    // 1. Inicia o estado de "salvando"
+    setState(() { _isSaving = true; });
 
     final authService = Provider.of<AuthService>(context, listen: false);
     final token = await authService.getToken();
-    const String baseUrl = kIsWeb ? 'http://127.0.0.1:8000' : 'http://10.0.2.2:8000';
-    final url = Uri.parse('$baseUrl/api/v1/aulas/');
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/v1/aulas/');
 
     final payload = {
       'modalidade_id': _selectedModalidadeId,
@@ -133,24 +131,38 @@ class _AulaFormWidgetState extends State<AulaFormWidget> {
       'status': 'Agendada',
       'aluno_ids': _alunosController.selectedOptions.map((v) => v.value).toList(),
       'professor_ids': _professoresController.selectedOptions.map((v) => v.value).toList(),
-      'recorrente_mensal': _isRecorrente, // <-- ADICIONADO AQUI
+      'recorrente_mensal': _isRecorrente,
     };
 
-    final response = await http.post(
-      url,
-      headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json; charset=UTF-8'},
-      body: jsonEncode(payload),
-    );
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json; charset=UTF-8'},
+        body: jsonEncode(payload),
+      );
 
-    if (response.statusCode == 201 && mounted) {
+      if (!mounted) return; // Garante que a tela ainda existe
+
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Aula(s) agendada(s) com sucesso!'), backgroundColor: Colors.green),
+        );
+        Navigator.of(context).pop(); // Volta para a tela anterior
+      } else {
+        final errorBody = jsonDecode(response.body);
+        final errorMessage = errorBody['errors']?.join(', ') ?? 'Erro desconhecido.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao agendar: $errorMessage'), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aula agendada com sucesso!'), backgroundColor: Colors.green),
+        SnackBar(content: Text('Erro de conexão: $e'), backgroundColor: Colors.red),
       );
-      Navigator.of(context).pop(); // Volta para a tela anterior
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao agendar aula: ${response.body}'), backgroundColor: Colors.red),
-      );
+    } finally {
+      // 2. Finaliza o estado de "salvando", não importa se deu certo ou erro
+      setState(() { _isSaving = false; });
     }
   }
 
@@ -224,13 +236,21 @@ class _AulaFormWidgetState extends State<AulaFormWidget> {
             const SizedBox(height: 24),
 
             ElevatedButton(
-              onPressed: _submitForm,
+              // Se estiver salvando, onPressed é null (desabilitado), senão chama _submitForm
+              onPressed: _isSaving ? null : _submitForm,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 backgroundColor: Colors.indigo,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Salvar Agendamento'),
+              // Se estiver salvando, mostra um indicador de progresso, senão mostra o texto
+              child: _isSaving
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                    )
+                  : const Text('Salvar Agendamento'),
             ),
           ],
         ),

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../auth/services/auth_service.dart';
 import '../../dashboard/widgets/kpi_card.dart'; // Importa nosso novo KpiCard!
+import '../../../core/api/api_config.dart';
 
 class AlunoDetailScreen extends StatefulWidget {
   final int alunoId;
@@ -30,8 +30,7 @@ class _AlunoDetailScreenState extends State<AlunoDetailScreen> {
     final token = await authService.getToken();
     if (token == null) throw Exception('Usuário não autenticado.');
 
-    const String baseUrl = kIsWeb ? 'http://127.0.0.1:8000' : 'http://10.0.2.2:8000';
-    final url = Uri.parse('$baseUrl/api/v1/alunos/${widget.alunoId}/');
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/v1/alunos/${widget.alunoId}/');
 
     final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
 

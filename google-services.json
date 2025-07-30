@@ -1,0 +1,38 @@
+{
+  "project_info": {
+    "project_number": "372078176180",
+    "project_id": "novo-front-f4ae9",
+    "storage_bucket": "novo-front-f4ae9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:372078176180:android:6bac41f648bd7be056b4e1",
+        "android_client_info": {
+          "package_name": "com.example.batucada_gestao_frontend"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "372078176180-lovqmh9cgole6uumrkajm8j9fdvosqpb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.batucada_gestao_frontend",
+            "certificate_hash": "c0da375275bdfda9d35524ec2325d01ed652532c"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3dDRe-Wbh_11JP3bQzv4dCDH4ILKflZQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -8,6 +8,7 @@ import '../widgets/aula_card.dart';
 
 import '../../auth/services/auth_service.dart';
 import '../../auth/screens/login_screen.dart';
+import '../../../core/api/api_config.dart';
 
 // Modelo simples para representar uma aula na UI
 class AulaEvent {
@@ -71,14 +72,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (token == null) throw Exception('Usuário não autenticado.');
 
     const String baseUrl = kIsWeb ? 'http://127.0.0.1:8000' : 'http://10.0.2.2:8000';
-    var url = Uri.parse('$baseUrl/api/v1/users/me/');
+    var url = Uri.parse('${ApiConfig.baseUrl}/api/v1/users/me/');
     var response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
     if (response.statusCode != 200) throw Exception('Falha ao buscar dados do usuário');
     
     final userData = jsonDecode(utf8.decode(response.bodyBytes));
     final userId = userData['id'];
 
-    url = Uri.parse('$baseUrl/api/v1/users/professores/$userId/');
+    url = Uri.parse('${ApiConfig.baseUrl}/api/v1/users/professores/$userId/');
     response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
     if (response.statusCode == 200) {
       return jsonDecode(utf8.decode(response.bodyBytes));
@@ -95,10 +96,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final firstDay = DateTime(month.year, month.month, 1);
     final lastDay = DateTime(month.year, month.month + 1, 0);
     
-    const String baseUrl = kIsWeb ? 'http://127.0.0.1:8000' : 'http://10.0.2.2:8000';
     final url = Uri.parse(
-        '$baseUrl/api/v1/aulas/?data_inicial=${firstDay.toIso8601String().substring(0, 10)}&data_final=${lastDay.toIso8601String().substring(0, 10)}');
-
+        '${ApiConfig.baseUrl}/api/v1/aulas/?data_inicial=${firstDay.toIso8601String().substring(0, 10)}&data_final=${lastDay.toIso8601String().substring(0, 10)}'
+      );
     final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
 
     if (response.statusCode == 200) {
